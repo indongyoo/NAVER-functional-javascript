@@ -1,0 +1,59 @@
+{
+  "_from": "fxjs2",
+  "_id": "fxjs2@0.2.6",
+  "_inBundle": false,
+  "_integrity": "sha512-3v3fBVwPbPX6+gyuYFPjPxr0mr9iS+KTpgO08NA2ztxYoguxLxahim3D50B2dHMxM6LQ9ft/Vwg19upSijnVIw==",
+  "_location": "/fxjs2",
+  "_phantomChildren": {},
+  "_requested": {
+    "type": "tag",
+    "registry": true,
+    "raw": "fxjs2",
+    "name": "fxjs2",
+    "escapedName": "fxjs2",
+    "rawSpec": "",
+    "saveSpec": null,
+    "fetchSpec": "latest"
+  },
+  "_requiredBy": [
+    "#USER",
+    "/"
+  ],
+  "_resolved": "https://registry.npmjs.org/fxjs2/-/fxjs2-0.2.6.tgz",
+  "_shasum": "1b5a7cc6803cccb3edf6bbd519db9a6b0fadb37d",
+  "_spec": "fxjs2",
+  "_where": "/Users/indongyoo/WebstormProjects/NAVER-functional-javascript/node",
+  "author": "",
+  "bugs": {
+    "url": "https://github.com/marpple/FxJS/issues"
+  },
+  "bundleDependencies": false,
+  "dependencies": {
+    "esm": "^3.0.80"
+  },
+  "deprecated": false,
+  "description": "Functional Extensions for Javascript",
+  "devDependencies": {
+    "chai": "^4.1.2",
+    "mocha": "^5.2.0"
+  },
+  "files": [
+    "Concurrency/*",
+    "Lazy/*",
+    "*.js",
+    "LICENSE",
+    "README.md"
+  ],
+  "homepage": "https://github.com/marpple/FxJS#readme",
+  "license": "MIT",
+  "main": "index.js",
+  "name": "fxjs2",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/marpple/FxJS.git"
+  },
+  "scripts": {
+    "test": "mocha -R spec test/**/*.js"
+  },
+  "version": "0.2.6"
+}

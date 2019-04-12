@@ -1,0 +1,441 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>1</title>
+</head>
+<body>
+
+# 이터레이터/이터러블/제너레이터
+
+<script>
+  function *gen() {
+    yield 1;
+    yield 10;
+    yield 20;
+  }
+  // for (const a of gen()) console.log(a);
+</script>
+
+# 명령형 코드를 이터러블 프로그래밍으로 바꾸기
+
+## 명령형 홀수 n개 더하기
+
+<script>
+  function f1(list, length) {
+    let acc = 0;
+    for (const a of list) {
+      if (a % 2) {
+        const b = a * a;
+        acc = acc + b;
+        if (!--length) break;
+      }
+    }
+    console.log(acc);
+  }
+  f1([1, 2, 3, 4, 5, 7, 10, 11, 12, 13, 14, 15], 2);
+  f1([1, 2, 3, 4, 5, 7, 10, 11, 12, 13, 14, 15], 3);
+</script>
+
+## 함수형 홀수 n개 더하기
+
+<script>
+  const curry = f => (a, ...bs) =>
+    bs.length == 0 ?
+      (...bs) => f(a, ...bs) :
+      f(a, ...bs);
+
+  const L = {};
+
+  L.filter = curry(function *(f, iter) {
+    for (const a of iter) {
+      // console.log('filter', a);
+      if (f(a)) yield a;
+    }
+  });
+
+  L.map = curry(function *(f, iter) {
+    for (const a of iter) {
+      yield f(a);
+    }
+  });
+
+  L.take = curry(function *(length, iter) {
+    for (const a of iter) {
+      yield a;
+      if (!--length) break;
+    }
+  });
+
+  const reduce = curry(function(f, acc, iter) {
+    if (arguments.length == 2) {
+      iter = acc[Symbol.iterator]();
+      acc = iter.next().value;
+    }
+    for (const a of iter) {
+      acc = f(acc, a);
+    }
+    return acc;
+  });
+
+  // function f2(list, length) {
+  //   console.log(
+  //     reduce((a, b) => a + b, 0,
+  //       take(length,
+  //         map(a => a * a,
+  //           filter(a => a % 2, list)))));
+  // }
+  // f2([1, 2, 3, 4, 5, 7, 10, 11, 12, 13, 14, 15], 2);
+  // f2([1, 2, 3, 4, 5, 7, 10, 11, 12, 13, 14, 15], 3);
+</script>
+
+## 관점 바꾸기 1
+ - if를 filter로
+ - 값 변화 후 변수 할당을 map으로
+ - break를 take로
+ - 축약 및 합산을 reduce로
+
+## 관점 바꾸기2
+ - while을 range로
+
+### while
+<script>
+  function f3(end) {
+    let start = 1;
+    const step = 2;
+    while (start < end) {
+      console.log(start);
+      start += step;
+    }
+  }
+  f3(10);
+</script>
+
+### range
+<script>
+  L.range = function *(start, end, step = 1) {
+    if (arguments.length == 1) {
+      end = start;
+      start = 0;
+    }
+    while (start < end) {
+      yield start;
+      start += step;
+    }
+  };
+
+  const each = curry(function(f, iter) {
+    for (const a of iter) {
+      f(a);
+    }
+    return iter;
+  });
+
+  function f4(end) {
+    each(console.log, L.range(1, end, 2));
+  }
+  f4(10);
+</script>
+
+## 관점 바꾸기3
+ - 효과를 구분하여 each로
+
+<script>
+  console.clear();
+</script>
+
+# 일급을 이용한 합성
+
+<script>
+  const add = curry((a, b) => a + b);
+  // console.log( reduce(add, 0, [1,2,3,4]) );
+
+  const go = (a, ...fs) => reduce((a, f) => f(a), a, fs);
+
+  go(0,
+    a => a + 1,
+    a => a + 10,
+    a => a + 100,
+    a => a + 1000,
+    console.log);
+
+  [1,2,3,4]
+    .map(a => a * a)
+    .filter(a => a % 2)
+    .forEach(a => console.log(a));
+
+  function f5(list, length) {
+    go(list,
+      L.filter(a => a % 2),
+      L.map(a => a * a),
+      L.take(length),
+      reduce((a, b) => a + b),
+      console.log);
+
+    // console.log(
+    //   reduce((a, b) => a + b, 0,
+    //     take(length,
+    //       map(a => a * a,
+    //         filter(a => a % 2, list)))));
+  }
+  // f5(L.range(Infinity), 50);
+  // f5([1, 2, 3, 4, 5, 7, 10, 11, 12, 13, 14, 15], 3);
+  // f5([1, 2, 3, 4, 5, 7, 10, 11, 12, 13, 14, 15], 4);
+
+</script>
+
+# 지연 평가와 엄격한 평가
+
+<script>
+  console.clear();
+
+  const map = curry((..._) => [...L.map(..._)]);
+  const filter = curry((f, iter) => [...L.filter(f, iter)]);
+  const take = curry((length, iter) => [...L.take(length, iter)]);
+  const range = (..._) => [...L.range(..._)];
+  const it = L.map(a => a + 10, [1,2,3]);
+
+  function f5(list, length) {
+    go(list,
+      filter(a => a % 2),
+      map(a => a * a),
+      take(length),
+      reduce((a, b) => a + b),
+      console.log);
+
+    // console.log(
+    //   reduce((a, b) => a + b, 0,
+    //     take(length,
+    //       map(a => a * a,
+    //         filter(a => a % 2, list)))));
+  }
+  // f5(range(100), 50);
+</script>
+
+# 2차원 배열
+
+<script>
+  const isIter = a => !!(a && a[Symbol.iterator]);
+
+  L.flat = function *(iter) {
+    for (const a of iter) {
+      if (isIter(a)) {
+        for (const b of a) {
+          yield b;
+        }
+      } else {
+        yield a;
+      }
+    }
+  };
+
+  go(
+    [[1, 2], 3, [4, 5], [6, 7, 8], [9, 10]],
+    L.flat,
+    L.filter(a => a % 2),
+    L.map(a => a * a),
+    take(2),
+    reduce(add),
+    console.log);
+</script>
+
+# 리얼월드
+
+<script>
+var users = [
+  { name: 'a', age: 21, family: [
+    { name: 'a1', age: 53 }, { name: 'a2', age: 47 },
+    { name: 'a3', age: 16 }, { name: 'a4', age: 14 }
+  ] },
+  { name: 'b', age: 24, family: [
+    { name: 'b1', age: 58 }, { name: 'b2', age: 51 },
+    { name: 'b3', age: 10 }, { name: 'b4', age: 22 }
+  ] },
+  { name: 'c', age: 31, family: [
+    { name: 'c1', age: 64 }, { name: 'c2', age: 62 }
+  ] },
+  { name: 'd', age: 20, family: [
+    { name: 'd1', age: 42 }, { name: 'd2', age: 42 },
+    { name: 'd3', age: 11 }, { name: 'd4', age: 7 }
+  ] }
+];
+  go(
+    users,
+    map(u => u.family),
+    L.flat,
+    L.filter(u => u.age < 20),
+    L.map(u => u.age),
+    take(3),
+    reduce(add),
+    console.log);
+  console.clear();
+</script>
+
+# 작은 함수들을 조합하여 함수 만들기
+
+## pipe
+
+<script>
+  const pipe = (...fs) => a => go(a, ...fs);
+
+  const f10 = pipe(
+    a => a + 1,
+    a => a + 10);
+
+  console.log(f10(0));
+</script>
+
+## reject
+
+<script>
+  const not = a => !a;
+  const negate = f => pipe(f, not);
+  const reject = curry((f, iter) => filter(negate(f), iter));
+
+  console.log(filter(a => a % 2, [1,2,3]));
+  console.log(reject(a => a % 2, [1,2,3]));
+</script>
+
+## find, some, every
+
+<script>
+  const head = ([first]) => first;
+  const find = (f, iter) => go(
+    L.filter(f, iter),
+    take(1),
+    head);
+
+  const some = (f, iter) => go(
+    L.filter(f, iter),
+    take(1),
+    arr => arr.length,
+    not,
+    not);
+
+  const every = (f, iter) => go(
+    L.filter(negate(f), iter),
+    take(1),
+    arr => !arr.length);
+
+  const compact = filter(a => a);
+</script>
+
+# 이터러블을 활용한 안전하고 재밌는 합성
+
+## map
+
+<script>
+  console.clear();
+
+  // var add15 = pipe(add(10), add(5));
+  // console.log(add15(5));
+  var add15 = pipe(map(add(10)), map(add(5)));
+
+  go(
+    [10],
+    map(add(10)),
+    map(add(5)),
+    each(console.log));
+console.clear();
+</script>
+
+## find 대신 filter take
+
+<script>
+const users2 = [
+  { name: 'AA', age: 35 },
+  { name: 'BB', age: 26 },
+  { name: 'CC', age: 28 },
+  { name: 'CC', age: 34 },
+  { name: 'EE', age: 23 }
+];
+
+const user = find(u => u.age == 34, users2);
+if (user) console.log(user.name);
+
+// go(users2,
+//   L.filter(u => u.age == 23),
+//   L.take(1),
+//   L.map(u => u.name),
+//   each(console.log));
+
+go(users2,
+  L.filter(u => u.age < 30),
+  L.take(2),
+  L.map(u => u.age),
+  reduce(add),
+  console.log);
+</script>
+
+## reduce + 복잡한 함수 + acc 보다 map f + reduce + f
+
+<script>
+  console.clear();
+
+  console.log(reduce((total, u) => {
+    return total + u.age;
+  }, 0, users2));
+
+  go(users2,
+    L.map(u => u.age),
+    reduce(add),
+    console.log);
+</script>
+
+## reduce 하나보다 map filter reduce
+
+<script>
+  console.clear();
+
+  console.log(reduce((total, u) => {
+
+
+    if (u.age < 30) return total + u.age;
+
+
+    return total;
+  }, 0, users2));
+
+  go([],
+    L.filter(u => u.age < 30),
+    L.map(u => u.age),
+    take(2),
+    reduce(add),
+    console.log);
+</script>
+
+<script>
+const obj = {
+  a: 1,
+  b: undefined,
+  c: 'CC',
+  d: 'DD'
+};
+go(
+  obj,
+  Object.entries,
+  reject(([k, v]) => v === undefined),
+  map(([k, v]) => `${k}=${v}`),
+  reduce((a, b) => `${a}&${b}`),
+  console.log);
+</script>
+
+# 객체를 이터러블 프로그래밍으로 다루기
+
+## values, entries, keys
+
+<script>
+</script>
+
+## object
+
+<script>
+</script>
+
+## mapObject
+
+<script>
+</script>
+
+</body>
+</html>
