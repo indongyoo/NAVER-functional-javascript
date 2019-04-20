@@ -395,6 +395,7 @@ console.log(
 </script>
 
 <script>
+console.clear();
 const obj1 = {
   a: 1,
   b: undefined,
@@ -402,60 +403,235 @@ const obj1 = {
   d: 'DD'
 };
 
-// BAD
-const query1 = obj =>
+function query1(obj) {
+  let tmp = '';
+  for (const k in obj) {
+    const v = obj[k];
+    if (v === undefined) continue;
+    if (tmp != '') tmp += '&';
+    tmp += k + '=' + v;
+  }
+  return tmp;
+}
+console.log( query1(obj1) );
+
+const query2 = obj =>
   Object.entries(obj)
-    .reduce((query, [k, v], i) => {
+    .reduce((query, [k, v]) => {
       if (v === undefined) return query;
-      const amp = i == 0 ? '' : '&';
+      const amp = query != '' ? '&' : '';
       return `${query}${amp}${k}=${v}`;
-    },
-    '');
+    }, '');
 
-query1(obj1);
-// a=1&c=CC&d=DD
+console.log( query2(obj1) );
 
-// GOOD
-const query2 = pipe(
-  Object.entries,
-  reject(([k, v]) => v === undefined),
-  map(([k, v]) => `${k}=${v}`),
-  reduce((a, b) => `${a}&${b}`));
-
-query2(obj1);
-// a=1&c=CC&d=DD
-
-// 혹은
-const join = curry((sep = ',', iter) =>
+const join = curry((sep, iter) =>
   reduce((a, b) => `${a}${sep}${b}`, iter));
 
-const query3 = pipe(
+const query3 = obj => go(
+  obj,
   Object.entries,
-  reject(([k, v]) => v === undefined),
+  reject(([_, v]) => v === undefined),
   map(join('=')),
-  join('&'));
+  join('&')
+);
 
-console.log(query3(obj1));
-// a=1&c=CC&d=DD
+console.log( query3(obj1) );
+
+// join('-', function*() {
+//   yield 1;
+//   yield 10;
+//   yield 30;
+// } ());
 </script>
 
-# 객체를 이터러블 프로그래밍으로 다루기
+# 어떠한 값이든 이터러블로 다루기 - 이터러블 프로그래밍 혹은 리습
 
-## values, entries, keys
+## 객체를 이터러블 프로그래밍으로 다루기
+
+### values, entries, keys
 
 <script>
+const log = console.log;
+
+function values(obj) {
+  var tmp = [];
+  for (const k in obj) {
+    console.log(k);
+    tmp.push(obj[k]);
+  }
+  return tmp;
+}
+
+L.values = function *(obj) {
+  for (const k in obj) {
+    yield obj[k];
+  }
+};
+
+L.keys = function *(obj) {
+  for (const k in obj) {
+    yield k;
+  }
+};
+
+L.entries = function *(obj) {
+  for (const k in obj) {
+    yield [k, obj[k]];
+  }
+};
+
+log(reduce(add, [1,2,3]));
+log(reduce(add, values({a: 1, b: 2, c: 3, d: 4, e: 5})));
+log(
+  reduce(
+    add,
+    L.take(2, values({a: 1, b: 2, c: 3, d: 4, e: 5}))));
+log(
+  reduce(
+    add,
+    L.take(3, L.values({a: 1, b: 2, c: 3, d: 4, e: 5}))));
+
+log(join(',', []));
 </script>
 
-## object
+### object
 
 <script>
+  console.clear();
+  const object = iter =>
+    reduce((obj, [k, v]) => (obj[k] = v, obj), {}, iter);
+
+  // const object2 = iter => go(
+  //   iter,
+  //   map(([k, v]) => ({[k]: v})),
+  //   reduce(Object.assign)
+  // );
+
+  log( object([['a', 1], ['b', 2], ['c', 4]]) );
+  // {a: 1, b: 2, c: 4}
+
+  // log( object2([['a', 1], ['b', 2], ['c', 4]]) );
 </script>
 
-## mapObject
+### mapObject
 
 <script>
+  const mapObject = (f, obj) => go(
+    obj,
+    L.entries,
+    L.map(([k, v]) => [k, f(v)]),
+    object);
+
+  log(mapObject(v => v * 10, {a: 1, b: 2, c: 3}));
+  // {a: 10, b: 20, c: 30}
 </script>
 
+### pick
+
+<script>
+  const pick = (ks, obj) => go(
+    obj,
+    L.entries,
+    L.filter(([k]) => ks.includes(k)),
+    L.take(ks.length),
+    object
+  );
+
+  log( pick(['b', 'c'], {a: 1, b: 2, c: 3, d: 4, e: 5, /*...*/}) );
+  // [['a', 1], ['b', 2] ...]
+  // [['b', 2], ['c', 3]]
+  // {b: 2, c: 3}
+</script>
+
+## Map, Set
+
+<script>
+  console.clear();
+
+  let m1 = new Map();
+  m1.set('a', 1);
+  m1.set('b', 2);
+  m1.set('c', 3);
+  log(object(filter(([k]) => k != 'a', m1)));
+
+  let s1 = new Set();
+  s1.add(1);
+  s1.add(2);
+  s1.add(10);
+  log([...s1]);
+  log(reduce(add, s1));
+
+  console.clear();
+</script>
+
+## 사용자 정의 객체
+
+<script>
+class Model {
+  constructor(attrs = {}) {
+    this.attrs = attrs;
+  }
+  get(k) {
+    return this.attrs[k];
+  }
+  set(k, v) {
+    this.attrs[k] = v;
+    return this;
+  }
+}
+class Collection {
+  constructor(models = []) {
+    this.models = models;
+  }
+  at(idx) {
+    return this.models[idx];
+  }
+  add(model) {
+    this.models.push(model);
+    return this;
+  }
+  *[Symbol.iterator]() {
+    for (const model of this.models) {
+      yield model;
+    }
+  }
+}
+class Product extends Model {}
+class Products extends Collection {
+  static add(p1, p2) {
+    return new Product({
+      price: p1.get('price') + p2.get('price')
+    });
+  }
+}
+
+const products = new Products();
+products.add(new Product({ name: '반팔', price: 10000 }));
+products.add(new Product({ name: '케이스', price: 15000 }));
+products.add(new Product({ name: '후드', price: 25000 }));
+
+products.at(1).set('is_selected', true);
+products.at(2).set('is_selected', true);
+
+log(reduce(
+  (total, product) => total + product.get('price'),
+  0,
+  products));
+
+go(
+  products,
+  filter(p => p.get('is_selected')),
+  map(p => p.get('price')),
+  reduce(add),
+  log);
+
+go(
+  products,
+  reduce(Products.add),
+  log
+)
+</script>
 
 </body>
 </html>

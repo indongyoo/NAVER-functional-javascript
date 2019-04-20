@@ -2,13 +2,16 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>1</title>
+  <title>2</title>
 </head>
 <body>
 
 # 커머스 데이터 다루기
 
-<script type="module">
+<!--<script type="module">
+  import { each, go, pipe, log, reduce, filter, map, flat } from "./fxjs2/fx.js";
+  import { L } from "./fxjs2/L.js";
+
   const products = [
     { name: '반팔티', price: 15000, quantity: 1, is_selected: true },
     { name: '긴팔티', price: 20000, quantity: 2, is_selected: false },
@@ -17,6 +20,19 @@
     { name: '바지', price: 25000, quantity: 5, is_selected: false }
   ];
 
+  const add = (a, b) => a + b;
+ /* const total_price = pipe(
+    L.map(p => p.price * p.quantity),
+    reduce(add)
+  );
+  const selected_total_price = pipe(
+    L.filter(p => p.is_selected),
+    total_price
+  );
+  log( total_price(products) );
+  log( selected_total_price(products) );
+
+  */
 
   const products2 = [
     {
@@ -51,11 +67,86 @@
       ]
     }
   ];
-</script>
+
+  let tmp = 0;
+  for (var i = 0; i < products2.length; i++) {
+    const p = products2[i];
+    if (p.is_selected) {
+      for (var j = 0; j < p.options.length; j++) {
+        const o = p.options[j];
+        tmp += (p.price + o.price) * o.quantity;
+      }
+    }
+  }
+  log(tmp);
+
+  go(
+    products2,
+    filter(p => p.is_selected),
+    map(p => map(o => (p.price + o.price) * o.quantity, p.options)),
+    flat,
+    reduce(add),
+    log)
+
+</script>-->
 
 # SNS 서비스 데이터 다루기
 
-<script>
+<script type="module">
+  import { each, filter, find, go, group_by, index_by, log } from "./fxjs2/fx.js";
+
+  const users = [
+    { id: 101, name: 'ID' },
+    { id: 102, name: 'BJ' },
+    { id: 103, name: 'PJ' },
+    { id: 104, name: 'HA' },
+    { id: 105, name: 'JE' },
+    { id: 106, name: 'JI' }
+  ];
+  const posts = [
+    { id: 201, body: '내용1', user_id: 101 },
+    { id: 202, body: '내용2', user_id: 102 },
+    { id: 203, body: '내용3', user_id: 103 },
+    { id: 204, body: '내용4', user_id: 102 },
+    { id: 205, body: '내용5', user_id: 101 },
+  ];
+  const comments = [
+    { id: 301, body: '댓글1', user_id: 105, post_id: 201 },
+    { id: 302, body: '댓글2', user_id: 104, post_id: 201 },
+    { id: 303, body: '댓글3', user_id: 104, post_id: 202 },
+    { id: 304, body: '댓글4', user_id: 105, post_id: 203 },
+    { id: 305, body: '댓글5', user_id: 106, post_id: 203 },
+    { id: 306, body: '댓글6', user_id: 106, post_id: 204 },
+    { id: 307, body: '댓글7', user_id: 102, post_id: 205 },
+    { id: 308, body: '댓글8', user_id: 103, post_id: 204 },
+    { id: 309, body: '댓글9', user_id: 103, post_id: 202 },
+    { id: 310, body: '댓글10', user_id: 105, post_id: 201 }
+  ];
+  window.posts = posts;
+
+  let i = 0;
+  /*go(
+    posts,
+    each(p => p.user = find(u => u.id == p.user_id, users)),
+    each(p => p.comments = filter(c => {
+      log(i++);
+      return c.post_id == p.id;
+    }, comments))
+  );
+  log(posts[0].user);
+  log(posts[1].user);
+  log(posts[0]);*/
+  const users2 = index_by(u => u.id, users);
+  window.users2 = users2;
+  const comments2 = group_by(c => c.post_id, comments);
+  log(comments2);
+
+  go(
+    posts,
+    each(p => p.user = users2[p.user_id]),
+    each(p => p.comments = comments2[p.id])
+  );
+  // log(i);
 </script>
 
 </body>

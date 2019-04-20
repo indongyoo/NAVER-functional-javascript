@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>3</title>
+</head>
+<body>
+
+# 비동기/동시성 프로그래밍
+
+## Promise의 규칙과 일급
+
+<script>
+  const getNumbers1 = () =>
+    new Promise(function(resolve) {
+      setTimeout(function() {
+        resolve(Promise.resolve(new Promise(function(resolve) {
+          setTimeout(function() {
+            resolve([1, 2, 3, 4]);
+          }, 500)
+        })));
+      }, 500);
+    });
+
+  const getNumbers2 = () => [1, 4];
+
+  // const go1 = (a, f) => a instanceof Promise ? a.then(f) : f(a);
+  //
+  // go1(getNumbers1(), console.log);
+  // go1(getNumbers2(), console.log);
+</script>
+
+## 일급 활용
+
+<script type="module">
+const curry = f => (a, ...bs) =>
+  bs.length == 0 ?
+    (...bs) => f(a, ...bs) :
+    f(a, ...bs);
+
+const L = {};
+
+L.map = curry(function *(f, iter) {
+  for (const a of iter) {
+    yield go1(a, f);
+  }
+});
+
+const go1 = (a, f) => a instanceof Promise ? a.then(f) : f(a);
+
+const reduce = curry(function(f, acc, iter) {
+  if (arguments.length == 2) {
+    iter = acc[Symbol.iterator]();
+    acc = iter.next().value;
+  }
+  for (const a of iter) {
+    const acc_ = acc;
+    acc = go1(a, a => go1(acc_, acc => f(acc, a)));
+  }
+  return acc;
+});
+
+const go = (a, ...fs) => reduce((a, f) => f(a), a, fs);
+
+const add = (a, b) => a + b;
+
+var a = go(
+  getNumbers1(),
+  L.map(n => Promise.resolve(n * n)),
+  L.map(n => Promise.resolve(n * n)),
+  reduce(add));
+
+go1(a, a => console.log(a + 100000));
+</script>
+
+# 에러 핸들링
+
+<script type="module">
+  import { go, reduce } from "./fxjs2/fx.js";
+  import { L } from "./fxjs2/L.js";
+
+  const add = (a, b) => a + b;
+
+  async function f1() {
+    try {
+      var a = await go(
+        getNumbers1(),
+        L.map(n => Promise.resolve(n * n)),
+        L.map(n => {
+          console.log(n);
+          if (n > 4) throw 'error~~' + n;
+          return Promise.resolve(n * n);
+        }),
+        reduce(add));
+    } catch (e) {
+      console.log(e, 'hi');
+      return 'ho'
+    }
+    // var b = await go(
+    //   getNumbers1(),
+    //   L.map(n => Promise.resolve(n * n)),
+    //   L.map(n => Promise.resolve(n * n)),
+    //   reduce(add));
+    //
+    // return a + b;
+  }
+
+  go(f1(), console.log);
+</script>
+
+</body>
+</html>
