@@ -8,11 +8,11 @@
 
 # 커머스 데이터 다루기
 
-<!--<script type="module">
+<script type="module">
   import { each, go, pipe, log, reduce, filter, map, flat } from "./fxjs2/fx.js";
   import { L } from "./fxjs2/L.js";
 
-  const products = [
+  const products1 = [
     { name: '반팔티', price: 15000, quantity: 1, is_selected: true },
     { name: '긴팔티', price: 20000, quantity: 2, is_selected: false },
     { name: '핸드폰케이스', price: 15000, quantity: 3, is_selected: true },
@@ -21,7 +21,7 @@
   ];
 
   const add = (a, b) => a + b;
- /* const total_price = pipe(
+  const total_price = pipe(
     L.map(p => p.price * p.quantity),
     reduce(add)
   );
@@ -29,12 +29,10 @@
     L.filter(p => p.is_selected),
     total_price
   );
-  log( total_price(products) );
-  log( selected_total_price(products) );
+  log( total_price(products1) );
+  log( selected_total_price(products1) );
 
-  */
-
-  const products2 = [
+  const products = [
     {
       name: '반팔티', price: 15000, is_selected: true,
       options: [
@@ -58,37 +56,34 @@
         { name: '무광', price: 0, quantity: 2 },
         { name: '범퍼케이스', price: 4000, quantity: 3 }
       ]
-    },
-    {
-      name: '후드티', price: 30000, is_selected: false,
-      options: [
-        { name: 'M', price: 0, quantity: 1 },
-        { name: 'L', price: 0, quantity: 2 }
-      ]
     }
   ];
 
-  let tmp = 0;
-  for (var i = 0; i < products2.length; i++) {
-    const p = products2[i];
-    if (p.is_selected) {
-      for (var j = 0; j < p.options.length; j++) {
-        const o = p.options[j];
-        tmp += (p.price + o.price) * o.quantity;
+  const total_price1 = products => {
+    let total = 0;
+    for (var i = 0; i < products.length; i++) {
+      const p = products[i];
+      if (p.is_selected) {
+        for (var j = 0; j < p.options.length; j++) {
+          const o = p.options[j];
+          total += (p.price + o.price) * o.quantity;
+        }
       }
     }
-  }
-  log(tmp);
+    return total;
+  };
 
-  go(
-    products2,
+  log(total_price1(products));
+
+  const total_price2 = pipe(
     filter(p => p.is_selected),
     map(p => map(o => (p.price + o.price) * o.quantity, p.options)),
     flat,
-    reduce(add),
-    log)
+    reduce(add));
 
-</script>-->
+  log(total_price2(products));
+
+</script>
 
 # SNS 서비스 데이터 다루기
 
@@ -139,14 +134,13 @@
   const users2 = index_by(u => u.id, users);
   window.users2 = users2;
   const comments2 = group_by(c => c.post_id, comments);
-  log(comments2);
 
   go(
     posts,
     each(p => p.user = users2[p.user_id]),
     each(p => p.comments = comments2[p.id])
   );
-  // log(i);
+  log(posts);
 </script>
 
 </body>
