@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>4</title>
+</head>
+<body>
+
+# 시간을 이터러블로 다루기
+
+## range 와 take 의 재해석
+
+<script type="module">
+  import { log, delay, each, go, tap } from "./fxjs2/fx.js";
+  import { L } from "./fxjs2/L.js";
+  import reduce from "./fxjs2/reduce.js";
+
+  /*go(
+    L.range(Infinity),
+    L.map(delay(1000)),
+    L.map(a => a + 10),
+    L.take(3),
+    each(log));*/
+
+  /*go(
+    L.range(Infinity),
+    L.map(delay(500)),
+    L.map(a => a * a),
+    L.takeUntil(size => size > 100),
+    L.map(tap(log)),
+    reduce((a, b) => a + b),
+    log);*/
+</script>
+
+## 스케쥴러 만들기
+
+## 아임포트 결제 누락 싱크
+ - https://github.com/iamport/iamport-manual/blob/master/%EC%9D%B8%EC%A6%9D%EA%B2%B0%EC%A0%9C/README.md#23-notification-url%EA%B0%80%EC%83%81%EA%B3%84%EC%A2%8C-%EC%9E%85%EA%B8%88%ED%86%B5%EB%B3%B4-%ED%8F%AC%ED%95%A8
+ - https://api.iamport.kr/
+
+<script type="module">
+  import { log, delay, each, go, tap, takeWhile, take, flat, map } from "./fxjs2/fx.js";
+  import { L } from "./fxjs2/L.js";
+
+  const Impt = {
+    payments: {
+      0: [{ iid: 11, oid: 1 }, { iid: 12, oid: 2 }, { iid: 13, oid: 3 }],
+      1: [{ iid: 14, oid: 4 }, { iid: 15, oid: 5 }, { iid: 16, oid: 6 }],
+      2: [{ iid: 17, oid: 7 }, { iid: 18, oid: 8 }],
+      3: [],
+      4: [],
+      //...
+    },
+    getPayments: page => {
+      console.log(`http://..?page=${page}`);
+      return delay(1000 * 2, Impt.payments[page]);
+    },
+    cancelPayment: paymentId => Promise.resolve(`${paymentId}: 취소완료`)
+  };
+
+  const getOrders = ids => delay(100, [{ id: 1 }, { id: 3 }, { id: 7 }]);
+
+  async function job() {
+    // 아임포트를 통해 결제된 payments를 가져오고
+    const payments = await go(
+      L.range(Infinity),
+      L.map(Impt.getPayments),
+      takeWhile(ps => ps.length),
+      flat);
+
+    // 디비에서 아임포트 payments와 매칭되는 주문 ids 를 가져오고
+    const orderIds = await go(
+      payments,
+      map(p => p.oid),
+      getOrders,
+      map(o => o.id));
+
+    // 아임포트 payments 중에 디비에 주문이 없는 payments를 뽑아서 취소
+    return go(
+      payments,
+      L.reject(p => orderIds.includes(p.oid)),
+      L.map(p => p.iid),
+      map(Impt.cancelPayment));
+  }
+  window.delay = delay;
+  async function recur() {
+    return Promise.all([
+      delay(1000 * 3),
+      job().then(log)
+    ]).then(recur);
+  }
+  // recur();
+</script>
+
+# 인프런 쿠폰 보내드리기
+ - minyoung9353@gmail.com
+
+</body>
+</html>

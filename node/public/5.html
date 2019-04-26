@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>4</title>
+</head>
+<body>
+
+# SQL 다루기
+
+## 함수형 사고
+
+<script>try {
+
+
+pool.query({
+  text: `
+    SELECT "email", "name"
+      FROM users
+      WHERE email = ?? AND name = ??`,
+  values: ['indong.yoo@gmail.com', '유인동']
+});
+
+class Query {
+  getText() {}
+  getValues() {}
+  setText() {}
+  setValues() {}
+  where() { return this }
+  whereIn() { return this }
+  select() { return this }
+  del() { return this }
+  update() { return this }
+  set() { return this }
+  excute() {
+    /*connection or pool */
+    return pool.query({
+      text: this.getText(),
+      values: this.getValues()
+    });
+  }
+  // ...
+};
+
+let uq = new Query('users');
+uq.select(['id', 'name']).where({ email: '', name: '' });
+// uq.select(['id', 'name']).whereIn('id', [10, 20, 30]).excute();
+// uq._text = 'SELECT "id", "name" FROM users WHERE email ... AND ...';
+
+const Q = {};
+Q.query = (...queries) => go(
+  queries,
+  map(f),
+  reduce(f),
+  ({text, query}) => pool.query({ text, query })
+);
+
+Q.query(
+  { text: 'SELECT "id", "name"', values: [] },
+  { text: 'FROM users', values: [] },
+  { text: 'WHERE email = ?? AND name = ??', values: [e, n] },
+)
+
+} catch (e) {}</script>
+
+<script type="module">
+  import {
+    log,
+    go,
+    takeAll,
+    reject,
+    takeWhile,
+    flat,
+    map,
+    tap,
+    takeUntil,
+    reduce,
+    entries,
+    keys,
+    values
+  } from "./fxjs2/fx.js";
+import { L } from "./fxjs2/L.js";
+
+const connection = {query: _ => log('SQL !! ', _) };
+
+const mergeIter = (iter1, iter2) => {
+  iter1 = iter1[Symbol.iterator]();
+  iter2 = iter2[Symbol.iterator]();
+  let merged = go(
+    L.range(Infinity),
+    L.map(_ => reject(({done}) => done, [iter1.next(), iter2.next()])),
+    takeUntil(({length}) => length < 2),
+    tap(log),
+    flat,
+    map(({value}) => value));
+  merged.push(...iter1, ...iter2);
+  return merged;
+};
+
+// log(mergeIter([1,2,3,4], [10, 20, 30, 40, 50, 60, 70, 80]));
+
+const isQuery = query =>
+  query &&
+  query.hasOwnProperty('text') &&
+  query.hasOwnProperty('values');
+
+// QUERY
+const QUERY = (strs, ...vals) => {
+  const queries1 = map(text => ({ text, values: [] }), strs);
+  const queries2 = map(
+    value => isQuery(value) ? value : { text: '??', values: [value] },
+    vals);
+  const merged = mergeIter(queries1, queries2);
+  connection.query(
+    reduce((query, {text, values}) => {
+        query.text += text;
+        query.values.push(...values);
+        return query;
+      }, { text: '', values: [] }, merged));
+};
+
+const CL = (...cs) => {
+  return {
+    text: reduce((a, b) => `${a},${b}`, map(c => `"${c}"`, cs)),
+    values: []
+  }
+};
+
+const WHERE = (obj) => ({
+  text: go(
+    obj,
+    keys,
+    map(k => `"${k}" = ??`),
+    reduce((a, b) => `${a} AND ${b}`)),
+  values: values(obj)
+});
+
+// QUERY `
+//   SELECT * FROM users WHERE email = ${'indong.yoo@gmail.com'} AND name = ${'유인동'}
+// `
+
+QUERY `
+  SELECT ${CL("id", "name")} FROM users
+    ${WHERE({
+      email: 'indong.yoo@gmail.com',
+      name: '유인동'
+    })}
+`
+// SELECT
+// INSERT INTO users VALUES({})
+// UPDATE
+// partition
+</script>
+
+</body>
+</html>

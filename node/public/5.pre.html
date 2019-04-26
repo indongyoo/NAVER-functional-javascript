@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>4</title>
+</head>
+<body>
+
+# SQL 다루기
+
+// 함수형 사고
+
+<!--<script>
+// pool.query({
+//   text: 'SELECT "email", "name" FROM users WHERE email = $1 AND name = $2',
+//   values: ['idy@marpple.com', '유인동']
+// });
+
+class Query {
+  getText() {}
+  getValues() {}
+  setText() {}
+  setValues() {}
+  where() { return this }
+  whereIn() { return this }
+  select() { return this }
+  del() { return this }
+  update() { return this }
+  set() { return this }
+  excute() {
+    /*connection or pool */
+    return pool.query({ text: this.getText(), values: this.getValues() });
+  }
+  // ...
+};
+
+let uq = new Query('users');
+// uq.select(['id', 'name']).where({ id: 10 });
+uq.select(['id', 'name']).whereIn('id', [10, 20, 30]).excute();
+
+const Q = {};
+Q.query = (...queries) => go(
+  queries,
+  map(f),
+  reduce(f),
+  ({text, query}) => pool.query({ text, query })
+);
+</script>-->
+
+<script type="module">
+  import {
+    every,
+    log,
+    filter,
+    flat,
+    go,
+    identity,
+    map,
+    range,
+    some,
+    take_until,
+    takeWhile,
+    reject, reduce
+  } from "./fxjs2/fx.js";
+  import { L } from "./fxjs2/L.js";
+
+const isQuery = query =>
+  query &&
+  query.hasOwnProperty('text') &&
+  query.hasOwnProperty('values');
+
+const mergeIter = (iter1, iter2) => {
+  iter1 = iter1[Symbol.iterator]();
+  iter2 = iter2[Symbol.iterator]();
+
+  let mereged = go(
+    L.range(Infinity),
+    L.map(_ => map(({value}) => value, reject(({done}) => done, [iter1.next(), iter2.next()]))),
+    take_until(a => a.length < 2),
+    flat);
+
+  mereged.push(...iter1, ...iter2);
+  return mereged;
+};
+
+const mergeQueries = queries => reduce(
+  (merged, q) => {
+    merged.text += q.text;
+    merged.values.push(...q.values);
+    return merged;
+  },
+  {text: '', values: []},
+  queries);
+
+log(mergeIter([10, 20, 30], [11, 21, 31, 41]));
+
+
+// QUERY
+const QUERY = (strs, ...values) => {
+  const queries1 = map(text => ({ text, values: [] }), strs);
+  const queries2 = map((value) => isQuery(value) ? value : { text: '??', values: [value] }, values);
+  log(mergeQueries(mergeIter(queries1, queries2)));
+};
+QUERY `SELECT * FROM WHERE id = ${10} AND name = ${'인동'}`;
+// SELECT
+// INSERT
+// UPDATE
+// partition
+</script>
+
+
+
+
+</body>
+</html>

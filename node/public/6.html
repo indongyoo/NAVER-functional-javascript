@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>4</title>
+</head>
+<body>
+
+# 시간을 이터러블로 다루기
+
+## range 와 take 의 재해석
+
+<script type="module">
+  import { log, delay, each, go, tap } from "./fxjs2/fx.js";
+  import { L } from "./fxjs2/L.js";
+  import reduce from "./fxjs2/reduce.js";
+  import { C } from "./fxjs2/C.js";
+
+  /*go(
+    L.range(5),
+    L.map(delay(1000)),
+    L.map(a => a + 10),
+    C.take(5),
+    each(log));*/
+
+  /*go(
+    L.range(Infinity),
+    L.map(delay(500)),
+    L.map(a => a * a),
+    L.takeWhile(size => size < 100),
+    L.map(tap(log)),
+    reduce((a, b) => a + b),
+    log);*/
+</script>
+
+## 스케쥴러 만들기
+
+## 아임포트 결제 누락 싱크
+ - https://github.com/iamport/iamport-manual/blob/master/%EC%9D%B8%EC%A6%9D%EA%B2%B0%EC%A0%9C/README.md#23-notification-url%EA%B0%80%EC%83%81%EA%B3%84%EC%A2%8C-%EC%9E%85%EA%B8%88%ED%86%B5%EB%B3%B4-%ED%8F%AC%ED%95%A8
+ - https://api.iamport.kr/
+
+<script type="module">
+  import { log, delay, each, go, tap, takeWhile, take, flat, map } from "./fxjs2/fx.js";
+  import { L } from "./fxjs2/L.js";
+
+  const Impt = {
+    payments: {
+      0: [{ imp_id: 11, order_id: 1 }, { imp_id: 12, order_id: 2 }, { imp_id: 13, order_id: 3 }],
+      1: [{ imp_id: 14, order_id: 4 }, { imp_id: 15, order_id: 5 }, { imp_id: 16, order_id: 6 }],
+      2: [{ imp_id: 17, order_id: 7 }, { imp_id: 18, order_id: 8 }],
+      3: [],
+      4: [],
+      //...
+    },
+    getPayments: page => {
+      console.log(`http://..?page=${page}`);
+      return delay(1000 * 2, Impt.payments[page]);
+    },
+    cancelPayment: imp_id => Promise.resolve(`${imp_id}: 취소완료`)
+  };
+
+  const getOrders = ids => delay(100, [{ id: 1 }, { id: 3 }, { id: 7 }]);
+
+  async function job() {
+    // 아임포트를 통해 결제된 payments를 가져오고
+
+    // 디비에서 아임포트 payments와 매칭되는 주문 ids 를 가져오고
+
+    // 아임포트 payments 중에 디비에 주문이 없는 payments를 뽑아서 취소
+  }
+</script>
+
+# 마치며
+ - 강의 코드 https://github.com/indongyoo/NAVER-functional-javascript
+ - '함수형 자바스크립트' 페북 그룹 https://www.facebook.com/groups/539983619537858
+ - 마플 깃헙 https://github.com/marpple
+ - 유인동 indong.yoo@gmail.com
+
+</body>
+</html>
