@@ -204,8 +204,11 @@
         $.remove)),
     $.append($('body')),
     $.findAll('img'),
-    Images.loader(6),
-    // log,
+    // L.map(img => new Promise(resolve => {
+    //   img.onload = () => setTimeout(() => resolve(img), 300);
+    //   img.src = $.attr('lazy-src', img);
+    // })),
+    // each($.addClass('fade-in')),
 
     // L.map(img => new Promise(resolve => {
     //   img.onload = () => setTimeout(() => resolve(img), 300);
@@ -214,11 +217,7 @@
     // C.takeAll,
     // each($.addClass('fade-in')),
 
-    // L.map(img => new Promise(resolve => {
-    //   img.onload = () => setTimeout(() => resolve(img), 300);
-    //   img.src = $.attr('lazy-src', img);
-    // })),
-    // each($.addClass('fade-in')),
+    Images.loader(12),
   );
 
   // Ui.confirm('삭제하시겠습니까?').then(_ => log('hi!!'));
