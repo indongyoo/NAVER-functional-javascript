@@ -14,20 +14,19 @@
   import { log, delay, each, go, tap } from "./fxjs2/fx.js";
   import { L } from "./fxjs2/L.js";
   import reduce from "./fxjs2/reduce.js";
-  import { C } from "./fxjs2/C.js";
 
   /*go(
-    L.range(5),
+    L.range(Infinity),
     L.map(delay(1000)),
     L.map(a => a + 10),
-    C.take(5),
+    L.take(3),
     each(log));*/
 
   /*go(
     L.range(Infinity),
     L.map(delay(500)),
     L.map(a => a * a),
-    L.takeWhile(size => size < 100),
+    L.takeUntil(size => size > 100),
     L.map(tap(log)),
     reduce((a, b) => a + b),
     log);*/
@@ -45,9 +44,9 @@
 
   const Impt = {
     payments: {
-      0: [{ imp_id: 11, order_id: 1 }, { imp_id: 12, order_id: 2 }, { imp_id: 13, order_id: 3 }],
-      1: [{ imp_id: 14, order_id: 4 }, { imp_id: 15, order_id: 5 }, { imp_id: 16, order_id: 6 }],
-      2: [{ imp_id: 17, order_id: 7 }, { imp_id: 18, order_id: 8 }],
+      0: [{ iid: 11, oid: 1 }, { iid: 12, oid: 2 }, { iid: 13, oid: 3 }],
+      1: [{ iid: 14, oid: 4 }, { iid: 15, oid: 5 }, { iid: 16, oid: 6 }],
+      2: [{ iid: 17, oid: 7 }, { iid: 18, oid: 8 }],
       3: [],
       4: [],
       //...
@@ -56,18 +55,40 @@
       console.log(`http://..?page=${page}`);
       return delay(1000 * 2, Impt.payments[page]);
     },
-    cancelPayment: imp_id => Promise.resolve(`${imp_id}: 취소완료`)
+    cancelPayment: paymentId => Promise.resolve(`${paymentId}: 취소완료`)
   };
 
   const getOrders = ids => delay(100, [{ id: 1 }, { id: 3 }, { id: 7 }]);
 
   async function job() {
     // 아임포트를 통해 결제된 payments를 가져오고
+    const payments = await go(
+      L.range(Infinity),
+      L.map(Impt.getPayments),
+      takeWhile(ps => ps.length),
+      flat);
 
     // 디비에서 아임포트 payments와 매칭되는 주문 ids 를 가져오고
+    const orderIds = await go(
+      payments,
+      map(p => p.oid),
+      getOrders,
+      map(o => o.id));
 
     // 아임포트 payments 중에 디비에 주문이 없는 payments를 뽑아서 취소
+    return go(
+      payments,
+      L.reject(p => orderIds.includes(p.oid)),
+      L.map(p => p.iid),
+      map(Impt.cancelPayment));
   }
+  async function recur() {
+    return Promise.all([
+      delay(1000 * 3),
+      job().then(log)
+    ]).then(recur);
+  }
+  recur();
 </script>
 
 # 마치며
@@ -75,6 +96,7 @@
  - '함수형 자바스크립트' 페북 그룹 https://www.facebook.com/groups/539983619537858
  - 마플 깃헙 https://github.com/marpple
  - 유인동 indong.yoo@gmail.com
+
 
 </body>
 </html>
