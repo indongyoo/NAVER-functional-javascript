@@ -1,4 +1,4 @@
-// FxJS-DOM 0.0.11
+// FxJS-DOM 0.0.12
 import {
   isUndefined, isArray, isString,
   head,
@@ -201,7 +201,7 @@ $.trigger = function(event, props, el) {
   if (event == 'submit') return el.submit(), el;
   let e = document.createEvent(mouseEvents[event] || 'Events');
   var bubbles = true;
-  for (var name in props) (name == 'bubbles') ? (bubbles = !!props[name]) : (event[name] = props[name]);
+  for (var name in props) (name == 'bubbles') ? (bubbles = !!props[name]) : (e[name] = props[name]);
   e.initEvent(event, bubbles, true);
   el.dispatchEvent(e);
   return el;
