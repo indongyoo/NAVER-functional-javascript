@@ -39,7 +39,3 @@
  - SQL 다루기
  - 시간을 이터러블로 다루기
  - 스케쥴러 만들기
-
-## 일부 영상
- - [2회차 중 50분](https://www.youtube.com/watch?v=D2PGBylHtRY)
- - [3회차 중 50분](https://www.youtube.com/watch?v=QblRxIvyiWg)
